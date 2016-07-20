@@ -1,0 +1,98 @@
+# Self-Driving-RC-Car
+ECEN 361 Embedded Systems 
+
+#include <SPI.h>
+#include<Pixy.h>
+#include<AFMotor.h>
+
+AF_DCMotor MotorDirection(2); // Left or right
+AF_DCMotor MotorRear(4);      //  Forward or Reverse
+
+Pixy pixy;
+int stuff=0;
+int position=150;
+
+void setup() 
+{
+  Serial.begin(9600);
+  Serial.print("Starting...\n");
+  pixy.init();
+  MotorDirection.run(RELEASE);
+  MotorRear.setSpeed(255);
+  MotorDirection.setSpeed(255); 
+}
+void loop() 
+{
+  static int i = 0;
+  int j;
+  uint16_t blocks;
+  char buf[32];
+  blocks = pixy.getBlocks();
+
+  if (blocks) 
+  {
+    i++;
+   
+    // PIXY CAM
+    if (i%50==0)
+    {
+      if(pixy.blocks[j].signature == 3)
+      {
+//        MotorRear.run(RELEASE);        
+        MotorRear.setSpeed(110);
+        MotorRear.run(BACKWARD);
+      }
+      if (pixy.blocks[j].signature == 1)
+      {
+        MotorRear.setSpeed(0);
+        MotorDirection.setSpeed(0);
+        MotorRear.run(RELEASE);
+        MotorDirection.run(RELEASE);
+        //Serial.print("object 2\n");
+        Serial.print("WARNING: There is an obstacle in front of you.\n");
+        Serial.print("STOP\n");
+        Serial.print("\n");
+      }
+      if (pixy.blocks[j].signature == 2)
+      {
+        MotorDirection.setSpeed(255);
+        //MotorRear.setSpeed(200);
+        if(pixy.blocks[j].x > 280)
+        {
+          MotorDirection.run(BACKWARD);
+          MotorRear.setSpeed(200);
+          MotorRear.run(BACKWARD);
+          Serial.print("Turn Right---------------------->\n");
+          Serial.print("\n");
+        }
+        if(pixy.blocks[j].x < 140)
+        {
+          MotorDirection.run(FORWARD);
+          Serial.print("<----------------------Turn Left \n");
+          
+          Serial.print("\n");
+          MotorRear.setSpeed(200);
+          MotorRear.run(BACKWARD);
+          if(pixy.blocks[j].x > 280)
+          {
+            MotorDirection.run(BACKWARD);
+            MotorRear.setSpeed(200);
+            MotorRear.run(BACKWARD);
+            Serial.print("Turn Right---------------------->\n");
+//            Serial.print("<----------------------Turn Left\n");
+            Serial.print("\n");
+          }
+        }
+        if(pixy.blocks[j].x < 250 && pixy.blocks[j].x > 140) 
+        {
+          MotorDirection.setSpeed(255);
+          MotorRear.setSpeed(200); 
+          MotorRear.run(BACKWARD); 
+          Serial.print("Go straight\n");
+          Serial.print("\n");    
+        }
+      }
+    } 
+  }
+}
+
